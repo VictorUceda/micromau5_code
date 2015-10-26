@@ -5,9 +5,9 @@
 #include "entry.h"
 
   //Define some global constants
-  #define X 16
-  #define Y 16
-    
+  #define X 13
+  #define Y 13
+
   entry maze[Y][X];
   //N,S,E,W
   int headings[] = {1,2,4,8};
@@ -15,8 +15,8 @@
 void setup(){
   //instantiate an empty maze
   instantiate();
-  
-  
+
+
 }
 
 void instantiate(){
@@ -53,27 +53,41 @@ int calcDist(int posx, int posy, int desireX, int desireY){
   return dist;
 }
 
-//Get the most optimistic distance between a given coordinate and a 
-//2x2 square in the center of a maze of dimension dim (dim must be even)
+//Get the most optimistic distance between a given coordinate and a
+//3x3 square in the center of a maze of dimension dim (dim must be even)
 int calcCenter(int posx, int posy, int dim){
   int center = dim/2;
   int dist = 0;
-  
-  if(posy<center){
-    if(posx<center){
+
+  if(posy < center){
+    if(posx < center){
       //You're in the top left of the maze
       dist=calcDist(posx, posy, (center-1), (center-1));
+    }else if(posx == center){
+      dist=calcDist(posx, posy, center, (center-1));
     }else{
       //You're in the bottom left of the maze
-      dist=calcDist(posx,posy, (center-1),center);
+      dist=calcDist(posx,posy, (center+1),(center-1));
+    }
+  }else if(posy == center){
+    if(posx < center){
+      //You're in the top center of the maze
+      dist=calcDist(posx, posy, center, (center-1));
+    }else if(posx == center){
+      dist=0;
+    }else{
+      //You're in the bottom center of the maze
+      dist=calcDist(posx,posy, center,(center+1));
     }
   }else{
-    if(posx>=center){
-      //You're in the bottom right of the maze
-      dist=calcDist(posx,posy,center,center);
+    if(posx < center){
+      //You're in the bottom left of the maze
+      dist=calcDist(posx,posy,(center - 1),(center + 1));
+    }else if(posx == center){
+      dist=calcDist(posx, posy, center, (center + 1));
     }else{
-      //You're in the top right of the maze
-      dist=calcDist(posx,posy,center,(center-1));
+      //You're in the bottom right of the maze
+      dist=calcDist(posx,posy,(center + 1),(center + 1));
     }
   }
 return dist;
@@ -112,30 +126,30 @@ INPUT: A Coord representing the current coordiante and the robots current headin
 OUTPUT: An optimal direction away from the current coordinate.
 */
 int orient(coord currCoord, int heading){
-  
+
   coord leastNext = {0,0};
   //This is the absolute largest value possible (dimension of maze squared)
   int leastNextVal = sizeof(maze)*sizeof(maze);
   int leastDir = heading;
-  
+
   //If there is a bitwise equivalence between the current heading and the cell's value, then the next cell is accessible
   if((maze[currCoord.x][currCoord.y].walls & heading) != 0){
     //Define a coordinate for the next cell based onthis heading and set the leastNextVal t its value
     coord leastnextTemp = bearingCoord(currCoord, heading);
-    
+
     if(checkBounds(leastnextTemp)){
       leastNext = leastnextTemp;
       leastNextVal = maze[leastNext.y][leastNext.x].distance;
     }
   }
-  
+
   for(int i=0; i<sizeof(headings); i++){
     int dir = headings[i];
     //if this dir is accessible
     if((maze[currCoord.y][currCoord.x].walls & dir) != 0){
       //define the coordiante for this dir
       coord dirCoord = bearingCoord(currCoord,dir);
-      
+
       if(checkBounds(dirCoord)){
         //if this dir is more optimal than continuing straight
         if(maze[dirCoord.y][dirCoord.x].distance < leastNextVal){
@@ -217,13 +231,12 @@ int readCurrent(){
 int readAhead(){
   return 0;
 }
-  
+
 
 /*
 INPUT: Coordindate to update, and a direction representing the wall to add
 OUTPUT: Update to coordinate adding the wall provided as an argument
 */
-
 void coordUpdate(coord coordinate, int wallDir){
   if(checkBounds(coordinate)){
     if((maze[coordinate.y][coordinate.x].walls & wallDir) != 0){
@@ -238,10 +251,10 @@ OUTPUT: Update maze for learned walls
 */
 void floodFillUpdate(coord currCoord, coord desired[]){
   StackList<coord> entries;
-  
+
   maze[currCoord.y][currCoord.x].walls=readCurrent();
   entries.push(currCoord);
-  
+
   for(int i=0; i<sizeof(headings); i++){
     int dir = headings[i];
     //If there's a wall in this dir
