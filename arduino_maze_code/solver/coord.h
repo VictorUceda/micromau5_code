@@ -1,5 +1,5 @@
 struct coord
 {
-  int x;
-  int y;
+  uint8_t x;
+  uint8_t y;
 };
